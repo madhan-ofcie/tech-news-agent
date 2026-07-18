@@ -1,0 +1,419 @@
+================================================================================
+                    DAILY CONTENT SPARK AGENT
+                AWS Weekend Challenge Project Documentation
+================================================================================
+Build Date: July 2026
+Challenge: AWS "Build an Always-On Agent" Weekend Challenge
+Total Cost: $0 (Free Tier + Free APIs) 🎉
+
+================================================================================
+                           PROJECT OVERVIEW
+================================================================================
+
+The Daily Content Spark Agent automatically generates tech news content every
+morning at 6 AM IST and delivers it to your inbox with:
+  • AI-generated script for video production
+  • Custom thumbnail image
+  • Professional formatting
+  • Zero cost deployment
+
+
+================================================================================
+                         SYSTEM ARCHITECTURE
+================================================================================
+
+EventBridge Scheduler (6 AM IST daily)
+           │
+           ▼
+AWS Lambda (tech-news-agent)
+           │
+      ┌────┼────┬──────────┐
+      │    │    │          │
+      ▼    ▼    ▼          ▼
+   Groq   Groq Pollinations Amazon
+   API    API   AI          SES
+   ↓      ↓      ↓           ↓
+Script  Title  Thumbnail  Email
+   │     │      │          │
+   └─────┴──────┴──────────┘
+           │
+           ▼
+    Amazon S3 (Storage)
+           │
+           ▼
+    📧 Your Inbox (Daily Report)
+
+
+================================================================================
+                            TECH STACK
+================================================================================
+
+Component                Technology              Cost
+─────────────────────────────────────────────────────────────────────────────
+Compute                 AWS Lambda (Python 3.12)  Free Tier
+Scheduler              Amazon EventBridge Scheduler  Free Tier
+Storage                Amazon S3                 Free Tier
+Email                  Amazon SES                Free Tier
+Monitoring             Amazon CloudWatch         Free Tier
+Script Generation      Groq API (Llama 3.3 70B)  Free
+Image Generation       Pollinations AI           Free
+─────────────────────────────────────────────────────────────────────────────
+TOTAL MONTHLY COST: $0.00 🎉
+
+
+================================================================================
+                         PREREQUISITES
+================================================================================
+
+Before you start, make sure you have:
+
+  ✓ AWS Account (Free Tier eligible)
+  ✓ Groq API Key (get free at https://console.groq.com)
+  ✓ Verified email in Amazon SES
+  ✓ Basic AWS CLI knowledge
+  ✓ Python 3.12 understanding
+
+
+================================================================================
+                    STEP-BY-STEP SETUP GUIDE
+================================================================================
+
+STEP 1: Create S3 Bucket
+─────────────────────────────────────────────────────────────────────────────
+
+Run this command in AWS CLI:
+
+    aws s3 mb s3://your-tech-news-bucket
+
+Replace "your-tech-news-bucket" with a unique name (bucket names must be
+globally unique across all AWS accounts).
+
+
+STEP 2: Verify Email in Amazon SES
+─────────────────────────────────────────────────────────────────────────────
+
+1. Go to AWS Console → Amazon SES
+2. Select region: us-east-1 (has best sandbox access)
+3. Click "Verified Identities"
+4. Click "Create Identity"
+5. Select "Email address"
+6. Enter your email address
+7. Click "Create"
+8. Check your inbox for verification email from AWS
+9. Click the verification link in the email
+
+Note: In sandbox mode, you can only send to verified email addresses.
+
+
+STEP 3: Create Lambda Function
+─────────────────────────────────────────────────────────────────────────────
+
+1. Go to AWS Lambda Dashboard
+2. Click "Create Function"
+3. Fill in details:
+   - Function name: tech-news-agent
+   - Runtime: Python 3.12
+   - Architecture: x86_64
+4. Click "Create Function"
+
+
+STEP 4: Add Lambda Layer (requests library)
+─────────────────────────────────────────────────────────────────────────────
+
+Lambda doesn't come with the requests library by default, so we need to add it:
+
+1. Go to AWS Lambda → Layers
+2. Click "Create Layer"
+3. Download requests library locally:
+
+       pip install requests -t python/
+
+4. Zip the python folder:
+
+       zip -r requests-layer.zip python/
+
+5. Upload to AWS Lambda Layer
+6. Attach this layer to your tech-news-agent function
+
+
+STEP 5: Set Environment Variables
+─────────────────────────────────────────────────────────────────────────────
+
+In Lambda function → Configuration → Environment Variables
+
+Variable Name               Value
+─────────────────────────────────────────────────────────────────────────────
+GROQ_API_KEY              Your Groq API key from console.groq.com
+SENDER_EMAIL              Your verified SES email address
+RECIPIENT_EMAIL           Email where you want to receive daily news
+S3_BUCKET                 Your S3 bucket name
+
+IMPORTANT: Never put API keys in your code! Always use environment variables.
+
+
+STEP 6: Configure Lambda Settings
+─────────────────────────────────────────────────────────────────────────────
+
+In Lambda function → Configuration → General Configuration:
+
+  • Timeout: 2 minutes 30 seconds (150 seconds)
+  • Memory: 256 MB
+  • Ephemeral storage: 512 MB (default)
+
+Why? Generating text and images takes time, and we need enough memory.
+
+
+STEP 7: Deploy Lambda Code
+─────────────────────────────────────────────────────────────────────────────
+
+1. Copy the lambda_function.py code
+2. Go to your Lambda function → Code tab
+3. Paste the code into the editor
+4. Click "Deploy"
+
+The function is now ready!
+
+
+STEP 8: Set Up EventBridge Scheduler
+─────────────────────────────────────────────────────────────────────────────
+
+1. Go to AWS Console → EventBridge → Schedules
+2. Click "Create Schedule"
+3. Fill in:
+   - Name: tech-news-daily
+   - Description: Daily tech news generation at 6 AM IST
+
+4. Schedule expression: cron(30 0 * * ? *)
+   
+   Explanation:
+   - 30 = 30 minutes
+   - 0 = 0 hours (midnight)
+   - * = every day
+   - * = every month
+   - ? = any day of week
+   - * = every year
+   
+   This runs at 12:30 AM UTC = 6:00 AM IST
+
+5. Select Target: AWS Lambda → tech-news-agent
+6. Click "Create Schedule"
+
+DONE! Your agent is now live! 🚀
+
+
+================================================================================
+                        PROJECT STRUCTURE
+================================================================================
+
+tech-news-agent/
+├── lambda_function.py           # Main Lambda function code
+├── README.md                    # Project documentation
+├── architecture.png             # Architecture diagram
+├── requirements.txt             # Python dependencies
+└── sample-output/
+    ├── thumbnail.png            # Sample generated thumbnail
+    ├── script.txt               # Sample generated video script
+    └── report.html              # Sample email report
+
+
+================================================================================
+                     ENVIRONMENT VARIABLES REFERENCE
+================================================================================
+
+Variable Name        Description                         Example
+─────────────────────────────────────────────────────────────────────────────
+GROQ_API_KEY        API key from Groq Console            gsk_abcd1234...
+                    Get free at: https://console.groq.com
+
+SENDER_EMAIL        SES-verified sender email            your-email@gmail.com
+                    Must be verified in SES first
+
+RECIPIENT_EMAIL     Email to receive daily reports       your-email@gmail.com
+                    Can be same as sender_email
+
+S3_BUCKET           S3 bucket name for storage           your-tech-news-bucket
+                    Created in Step 1
+
+
+================================================================================
+                          SECURITY BEST PRACTICES
+================================================================================
+
+✓ API Keys Security
+  • Store API keys in Lambda Environment Variables (encrypted at rest)
+  • NEVER commit API keys to GitHub or any version control
+  • Use AWS Secrets Manager for production deployments
+
+✓ S3 Bucket Security
+  • S3 bucket has private access only
+  • Only Lambda function can read/write to it
+  • Block public access enabled
+
+✓ SES Restrictions
+  • In sandbox mode initially (sends only to verified emails)
+  • Can request production access once tested
+  • All emails are logged in CloudWatch
+
+✓ Code Security
+  • No credentials hardcoded in source code
+  • All sensitive data via environment variables
+  • Lambda execution role has minimal permissions (principle of least privilege)
+
+
+================================================================================
+                         PERFORMANCE METRICS
+================================================================================
+
+Metric                          Value
+─────────────────────────────────────────────────────────────────────────────
+Total Execution Time            ~60-90 seconds
+Memory Used                     ~103 MB / 256 MB allocated
+Script Length                   ~3000-3500 characters
+Thumbnail Image Size            ~500KB-1MB
+Email Delivery Time             ~2-5 seconds
+Average Daily Cost              ~$0.00
+
+
+Why is execution time ~90 seconds?
+  • Groq API calls: ~15-20 seconds (2 requests for script + title)
+  • Pollinations AI call: ~20-30 seconds (image generation)
+  • S3 upload: ~5 seconds
+  • Email sending: ~5 seconds
+  • Processing overhead: ~10-15 seconds
+
+
+================================================================================
+                         DEPENDENCIES
+================================================================================
+
+# requirements.txt
+
+requests==2.31.0          # HTTP library for API calls
+boto3==1.28.0             # AWS SDK for Python
+urllib3==2.0.4            # HTTP client (required by requests)
+
+
+Install with:
+    pip install -r requirements.txt
+
+
+================================================================================
+                         TROUBLESHOOTING GUIDE
+================================================================================
+
+Issue: "Lambda timeout exceeded"
+Solution:
+  • Increase timeout to 3 minutes in Lambda settings
+  • Check if Groq API or Pollinations AI is responding slowly
+  • Monitor CloudWatch logs for where it's hanging
+
+Issue: "Permission denied uploading to S3"
+Solution:
+  • Verify Lambda execution role has S3 permissions
+  • Check bucket name in environment variable
+  • Ensure bucket exists and is in same region
+
+Issue: "Email not received"
+Solution:
+  • Verify email address is verified in SES
+  • Check SES is not in sandbox mode
+  • Check spam/junk folder
+  • Verify SENDER_EMAIL and RECIPIENT_EMAIL in env vars
+
+Issue: "Groq API rate limit"
+Solution:
+  • Free tier has rate limits
+  • Add delay between API calls
+  • Consider upgrading Groq plan for production
+
+Issue: "Invalid GROQ_API_KEY"
+Solution:
+  • Get new key from https://console.groq.com
+  • Ensure no extra spaces in environment variable
+  • Test key locally before deployment
+
+
+================================================================================
+                            NEXT STEPS
+================================================================================
+
+1. Deploy the project following the setup guide
+2. Wait for first scheduled run at 6 AM IST
+3. Check CloudWatch Logs for errors (Lambda → Monitoring → Logs)
+4. Once working, customize:
+   - News topics (tech news → any topic)
+   - Generation frequency (daily → hourly/weekly)
+   - Email template
+   - Thumbnail style
+   - Script tone/style
+
+5. For production:
+   - Move API keys to AWS Secrets Manager
+   - Set up SNS notifications for failures
+   - Add error handling and retry logic
+   - Request SES production access
+
+6. Scale up:
+   - Store content in DynamoDB
+   - Create website to display archives
+   - Add RSS feed
+   - Integrate with YouTube upload
+
+
+================================================================================
+                         RESOURCES & LINKS
+================================================================================
+
+AWS Documentation:
+  • Lambda: https://docs.aws.amazon.com/lambda/
+  • EventBridge: https://docs.aws.amazon.com/eventbridge/
+  • S3: https://docs.aws.amazon.com/s3/
+  • SES: https://docs.aws.amazon.com/ses/
+  • CloudWatch: https://docs.aws.amazon.com/cloudwatch/
+
+Third-Party APIs:
+  • Groq API: https://console.groq.com
+  • Pollinations AI: https://pollinations.ai
+  • AWS CLI: https://aws.amazon.com/cli/
+
+Challenge & Community:
+  • AWS Builder Center: https://aws.amazon.com/builder/
+  • AWS Free Tier: https://aws.amazon.com/free/
+  • AWS Community: https://repost.aws/
+
+
+================================================================================
+                          ACKNOWLEDGMENTS
+================================================================================
+
+Built with:
+  ✓ AWS Builder Center - Weekend Agent Challenge
+  ✓ Groq - Ultra-fast AI inference (Llama 3.3 70B)
+  ✓ Pollinations AI - Free image generation
+  ✓ Amazon Web Services - Free Tier compute resources
+
+Special thanks to the AWS community for feedback and support!
+
+
+================================================================================
+                            LICENSE & USAGE
+================================================================================
+
+MIT License - Feel free to use, modify, and redistribute!
+
+You are free to:
+  ✓ Use this project for personal or commercial purposes
+  ✓ Modify the code as needed
+  ✓ Distribute modified versions
+  ✓ Use for learning and education
+
+Just include the original license in your distribution.
+
+
+================================================================================
+                              THE END
+                         Happy Coding! 🚀
+================================================================================
+
+Last Updated: July 2026
+Questions? Check CloudWatch logs or create an issue!
